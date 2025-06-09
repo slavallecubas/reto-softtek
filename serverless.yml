@@ -1,0 +1,85 @@
+# "org" ensures this Service is used with the correct Serverless Framework Access Key.
+org: slavallec
+service: aws-reto-softtek
+
+provider:
+  name: aws
+  runtime: nodejs20.x
+  architecture: arm64
+  stage: prod
+  region: us-east-1
+  memorySize: 512
+  deploymentBucket:
+    name: s3-softtek-${self:provider.stage}
+  logRetentionInDays: 1
+  timeout: 300
+  environment:
+    STAGE: ${self:provider.stage}
+    SWAPI_BASE_URL: https://swapi.py4e.com/api
+    WEATHER_BASE_URL: https://api.openweathermap.org/data/2.5/weather
+    WEATHER_API_KEY: 68a740e385965b46699c00876750e4c4
+    JWT_SECRET: api-softtek-rimac
+    CACHE_TTL: 1800
+
+package: 
+  exclude:
+    - src/**
+    - node_modules/**
+    - '!node_modules/@vendia/**'
+    - '@nestjs/core'
+
+functions:
+  api:
+    handler: dist/main.handler
+    events:
+      - http:
+          path: /{proxy+}
+          method: ANY
+      - http:
+          path: /
+          method: ANY
+    environment:
+      DYNAMO_USERS_TABLE: ${self:service}-${self:provider.stage}-users
+      DYNAMO_FUSION_TABLE: ${self:service}-${self:provider.stage}-fusion
+      DYNAMO_CACHE_TABLE: ${self:service}-${self:provider.stage}-cache
+
+plugins:
+  - serverless-offline
+
+resources:
+  Resources:
+    FusionTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-fusion
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: fusionId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: fusionId
+            KeyType: HASH
+      
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-users
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+
+    CacheTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-${self:provider.stage}-cache
+        BillingMode: PAY_PER_REQUEST
+        AttributeDefinitions:
+          - AttributeName: cacheId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: cacheId
+            KeyType: HASH
