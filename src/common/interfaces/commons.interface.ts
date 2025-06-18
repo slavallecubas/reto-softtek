@@ -1,3 +1,6 @@
+import { User } from 'src/users/entities/user.entity';
+import { ErrorSeverity, ErrorType } from '../libs/Constants';
+
 export interface IWeather {
   coord: {
     lon: number;
@@ -117,4 +120,48 @@ export class IFuseData {
   planet: HomeworldDto;
   weather: WeatherDto;
   metadata: MetadataDto;
+}
+
+export interface AuthServiceResponse {
+  accessToken: string | null;
+  user: User | null;
+  message?: string;
+}
+
+export interface IAuthToken {
+  role?: string;
+  sub: string;
+  iat: number;
+  exp: number;
+}
+
+export interface IUseToken {
+  role?: string;
+  sub: string;
+  isExpired: boolean;
+}
+
+export interface ICustomError {
+  type: ErrorType;
+  code: string;
+  message: string;
+  details?: any;
+  severity?: ErrorSeverity;
+  timestamp?: Date;
+  stackTrace?: string;
+}
+
+export interface ErrorResponse {
+  success: boolean;
+  error: {
+    type: string;
+    code: string;
+    message: string;
+    details?: any;
+    severity: string;
+    timestamp: string;
+    path: string;
+    method: string;
+    requestId?: string;
+  };
 }

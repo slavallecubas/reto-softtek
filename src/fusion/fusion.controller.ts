@@ -1,9 +1,11 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { FusionService } from './fusion.service';
 import { CreateFusionDto } from './dto/create-fusion.dto';
 import { IFuseData } from 'src/common/interfaces/commons.interface';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @Controller('fusionados')
+@UseGuards(AuthGuard)
 export class FusionController {
   constructor(private readonly fusionService: FusionService) {}
 

@@ -4,29 +4,32 @@
     "servicePath": "C:\\Users\\User\\Desktop\\api-reto\\serverless.yml",
     "serviceConfigFileName": "serverless.yml",
     "service": {
-      "org": "slavallec",
       "service": "aws-reto-softtek",
+      "frameworkVersion": "4",
       "provider": {
         "name": "aws",
         "runtime": "nodejs20.x",
         "architecture": "arm64",
-        "stage": "prod",
+        "stage": "dev",
         "region": "us-east-1",
-        "memorySize": 512,
-        "deploymentBucket": "s3-softtek-prod",
+        "memorySize": 2048,
+        "versionFunctions": false,
+        "deploymentBucket": "s3-sls-dev",
         "logRetentionInDays": 1,
-        "timeout": 300,
+        "timeout": 60,
+        "tracing": {
+          "lambda": true
+        },
         "environment": {
-          "STAGE": "prod",
+          "STAGE": "dev",
           "SWAPI_BASE_URL": "https://swapi.py4e.com/api",
           "WEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5/weather",
           "WEATHER_API_KEY": "<REDACTED>",
           "JWT_SECRET": "<REDACTED>",
           "CACHE_TTL": "1800"
         },
-        "versionFunctions": true,
         "deploymentBucketObject": {
-          "name": "s3-softtek-prod"
+          "name": "s3-sls-dev"
         },
         "compiledCloudFormationTemplate": {
           "AWSTemplateFormatVersion": "2010-09-09",
@@ -35,7 +38,7 @@
             "ApiLogGroup": {
               "Type": "AWS::Logs::LogGroup",
               "Properties": {
-                "LogGroupName": "/aws/lambda/aws-reto-softtek-prod-api",
+                "LogGroupName": "/aws/lambda/aws-reto-softtek-dev-api",
                 "RetentionInDays": 1
               }
             },
@@ -65,7 +68,7 @@
                         "-",
                         [
                           "aws-reto-softtek",
-                          "prod",
+                          "dev",
                           "lambda"
                         ]
                       ]
@@ -82,7 +85,7 @@
                           ],
                           "Resource": [
                             {
-                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-prod*:*"
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-dev*:*"
                             }
                           ]
                         },
@@ -93,8 +96,18 @@
                           ],
                           "Resource": [
                             {
-                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-prod*:*:*"
+                              "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-dev*:*:*"
                             }
+                          ]
+                        },
+                        {
+                          "Effect": "Allow",
+                          "Action": [
+                            "xray:PutTraceSegments",
+                            "xray:PutTelemetryRecords"
+                          ],
+                          "Resource": [
+                            "*"
                           ]
                         }
                       ]
@@ -107,7 +120,7 @@
                     "-",
                     [
                       "aws-reto-softtek",
-                      "prod",
+                      "dev",
                       {
                         "Ref": "AWS::Region"
                       },
@@ -121,28 +134,31 @@
               "Type": "AWS::Lambda::Function",
               "Properties": {
                 "Code": {
-                  "S3Bucket": "s3-softtek-prod",
-                  "S3Key": "serverless/aws-reto-softtek/prod/1749480247192-2025-06-09T14:44:07.192Z/aws-reto-softtek.zip"
+                  "S3Bucket": "s3-sls-dev",
+                  "S3Key": "serverless/aws-reto-softtek/dev/1749692818780-2025-06-12T01:46:58.780Z/aws-reto-softtek.zip"
                 },
                 "Handler": "dist/main.handler",
                 "Runtime": "nodejs20.x",
-                "FunctionName": "aws-reto-softtek-prod-api",
-                "MemorySize": 512,
-                "Timeout": 300,
+                "FunctionName": "aws-reto-softtek-dev-api",
+                "MemorySize": 2048,
+                "Timeout": 60,
                 "Architectures": [
                   "arm64"
                 ],
+                "TracingConfig": {
+                  "Mode": "Active"
+                },
                 "Environment": {
                   "Variables": {
-                    "STAGE": "prod",
+                    "STAGE": "dev",
                     "SWAPI_BASE_URL": "https://swapi.py4e.com/api",
                     "WEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5/weather",
                     "WEATHER_API_KEY": "<REDACTED>",
                     "JWT_SECRET": "<REDACTED>",
                     "CACHE_TTL": "1800",
-                    "DYNAMO_USERS_TABLE": "aws-reto-softtek-prod-users",
-                    "DYNAMO_FUSION_TABLE": "aws-reto-softtek-prod-fusion",
-                    "DYNAMO_CACHE_TABLE": "aws-reto-softtek-prod-cache"
+                    "DYNAMO_USERS_TABLE": "aws-reto-softtek-dev-users",
+                    "DYNAMO_FUSION_TABLE": "aws-reto-softtek-dev-fusion",
+                    "DYNAMO_CACHE_TABLE": "aws-reto-softtek-dev-cache"
                   }
                 },
                 "Role": {
@@ -156,20 +172,10 @@
                 "ApiLogGroup"
               ]
             },
-            "ApiLambdaVersionkh39zqrdOZDI86cJBCeyEjyXA3Yytq8eqhrRVfU1I": {
-              "Type": "AWS::Lambda::Version",
-              "DeletionPolicy": "Retain",
-              "Properties": {
-                "FunctionName": {
-                  "Ref": "ApiLambdaFunction"
-                },
-                "CodeSha256": "3U0aQLNcjco6cLvPK0wKQerbT9oQZJeoeE5TVOnA68M="
-              }
-            },
             "ApiGatewayRestApi": {
               "Type": "AWS::ApiGateway::RestApi",
               "Properties": {
-                "Name": "prod-aws-reto-softtek",
+                "Name": "dev-aws-reto-softtek",
                 "EndpointConfiguration": {
                   "Types": [
                     "EDGE"
@@ -288,13 +294,13 @@
                 "ApiLambdaPermissionApiGateway"
               ]
             },
-            "ApiGatewayDeployment1749480205429": {
+            "ApiGatewayDeployment1749692679282": {
               "Type": "AWS::ApiGateway::Deployment",
               "Properties": {
                 "RestApiId": {
                   "Ref": "ApiGatewayRestApi"
                 },
-                "StageName": "prod"
+                "StageName": "dev"
               },
               "DependsOn": [
                 "ApiGatewayMethodProxyVarAny",
@@ -341,7 +347,7 @@
             "FusionTable": {
               "Type": "AWS::DynamoDB::Table",
               "Properties": {
-                "TableName": "aws-reto-softtek-prod-fusion",
+                "TableName": "aws-reto-softtek-dev-fusion",
                 "BillingMode": "PAY_PER_REQUEST",
                 "AttributeDefinitions": [
                   {
@@ -360,11 +366,15 @@
             "UsersTable": {
               "Type": "AWS::DynamoDB::Table",
               "Properties": {
-                "TableName": "aws-reto-softtek-prod-users",
+                "TableName": "aws-reto-softtek-dev-users",
                 "BillingMode": "PAY_PER_REQUEST",
                 "AttributeDefinitions": [
                   {
                     "AttributeName": "userId",
+                    "AttributeType": "S"
+                  },
+                  {
+                    "AttributeName": "email",
                     "AttributeType": "S"
                   }
                 ],
@@ -373,13 +383,27 @@
                     "AttributeName": "userId",
                     "KeyType": "HASH"
                   }
+                ],
+                "GlobalSecondaryIndexes": [
+                  {
+                    "IndexName": "email-index",
+                    "KeySchema": [
+                      {
+                        "AttributeName": "email",
+                        "KeyType": "HASH"
+                      }
+                    ],
+                    "Projection": {
+                      "ProjectionType": "ALL"
+                    }
+                  }
                 ]
               }
             },
             "CacheTable": {
               "Type": "AWS::DynamoDB::Table",
               "Properties": {
-                "TableName": "aws-reto-softtek-prod-cache",
+                "TableName": "aws-reto-softtek-dev-cache",
                 "BillingMode": "PAY_PER_REQUEST",
                 "AttributeDefinitions": [
                   {
@@ -398,18 +422,9 @@
           },
           "Outputs": {
             "ServerlessDeploymentBucketName": {
-              "Value": "s3-softtek-prod",
+              "Value": "s3-sls-dev",
               "Export": {
-                "Name": "sls-aws-reto-softtek-prod-ServerlessDeploymentBucketName"
-              }
-            },
-            "ApiLambdaFunctionQualifiedArn": {
-              "Description": "Current Lambda function version",
-              "Value": {
-                "Ref": "ApiLambdaVersionkh39zqrdOZDI86cJBCeyEjyXA3Yytq8eqhrRVfU1I"
-              },
-              "Export": {
-                "Name": "sls-aws-reto-softtek-prod-ApiLambdaFunctionQualifiedArn"
+                "Name": "sls-aws-reto-softtek-dev-ServerlessDeploymentBucketName"
               }
             },
             "ServiceEndpoint": {
@@ -430,12 +445,12 @@
                     {
                       "Ref": "AWS::URLSuffix"
                     },
-                    "/prod"
+                    "/dev"
                   ]
                 ]
               },
               "Export": {
-                "Name": "sls-aws-reto-softtek-prod-ServiceEndpoint"
+                "Name": "sls-aws-reto-softtek-dev-ServiceEndpoint"
               }
             }
           }
@@ -444,15 +459,18 @@
       },
       "package": {
         "exclude": [
-          "src/**",
-          "node_modules/**",
           "!node_modules/@vendia/**",
-          "@nestjs/core"
+          ".serverless/**",
+          ".git/**"
         ],
-        "artifactsS3KeyDirname": "serverless/aws-reto-softtek/prod/code-artifacts",
-        "deploymentBucket": "s3-softtek-prod",
+        "include": [
+          "dist/**",
+          "node_modules/**"
+        ],
+        "artifactsS3KeyDirname": "serverless/aws-reto-softtek/dev/code-artifacts",
+        "deploymentBucket": "s3-sls-dev",
         "artifact": "C:\\Users\\User\\Desktop\\api-reto\\.serverless\\aws-reto-softtek.zip",
-        "artifactDirectoryName": "serverless/aws-reto-softtek/prod/1749480247192-2025-06-09T14:44:07.192Z"
+        "artifactDirectoryName": "serverless/aws-reto-softtek/dev/1749692818780-2025-06-12T01:46:58.780Z"
       },
       "functions": {
         "api": {
@@ -474,28 +492,33 @@
             }
           ],
           "environment": {
-            "DYNAMO_USERS_TABLE": "aws-reto-softtek-prod-users",
-            "DYNAMO_FUSION_TABLE": "aws-reto-softtek-prod-fusion",
-            "DYNAMO_CACHE_TABLE": "aws-reto-softtek-prod-cache"
+            "DYNAMO_USERS_TABLE": "aws-reto-softtek-dev-users",
+            "DYNAMO_FUSION_TABLE": "aws-reto-softtek-dev-fusion",
+            "DYNAMO_CACHE_TABLE": "aws-reto-softtek-dev-cache"
           },
-          "name": "aws-reto-softtek-prod-api",
+          "name": "aws-reto-softtek-dev-api",
           "package": {},
-          "memory": 512,
-          "timeout": 300,
+          "memory": 2048,
+          "timeout": 60,
           "runtime": "nodejs20.x",
-          "vpc": {},
-          "versionLogicalId": "ApiLambdaVersionkh39zqrdOZDI86cJBCeyEjyXA3Yytq8eqhrRVfU1I"
+          "vpc": {}
         }
       },
       "plugins": [
         "serverless-offline"
       ],
+      "custom": {
+        "SWAPI_URL": "https://swapi.py4e.com/api",
+        "WEATHER_URL": "https://api.openweathermap.org/data/2.5/weather",
+        "WEATHER_KEY": "68a740e385965b46699c00876750e4c4",
+        "secreto_jwt": "<REDACTED>"
+      },
       "resources": {
         "Resources": {
           "FusionTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
-              "TableName": "aws-reto-softtek-prod-fusion",
+              "TableName": "aws-reto-softtek-dev-fusion",
               "BillingMode": "PAY_PER_REQUEST",
               "AttributeDefinitions": [
                 {
@@ -514,11 +537,15 @@
           "UsersTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
-              "TableName": "aws-reto-softtek-prod-users",
+              "TableName": "aws-reto-softtek-dev-users",
               "BillingMode": "PAY_PER_REQUEST",
               "AttributeDefinitions": [
                 {
                   "AttributeName": "userId",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "email",
                   "AttributeType": "S"
                 }
               ],
@@ -527,13 +554,27 @@
                   "AttributeName": "userId",
                   "KeyType": "HASH"
                 }
+              ],
+              "GlobalSecondaryIndexes": [
+                {
+                  "IndexName": "email-index",
+                  "KeySchema": [
+                    {
+                      "AttributeName": "email",
+                      "KeyType": "HASH"
+                    }
+                  ],
+                  "Projection": {
+                    "ProjectionType": "ALL"
+                  }
+                }
               ]
             }
           },
           "CacheTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
-              "TableName": "aws-reto-softtek-prod-cache",
+              "TableName": "aws-reto-softtek-dev-cache",
               "BillingMode": "PAY_PER_REQUEST",
               "AttributeDefinitions": [
                 {
@@ -557,23 +598,26 @@
       "name": "aws",
       "runtime": "nodejs20.x",
       "architecture": "arm64",
-      "stage": "prod",
+      "stage": "dev",
       "region": "us-east-1",
-      "memorySize": 512,
-      "deploymentBucket": "s3-softtek-prod",
+      "memorySize": 2048,
+      "versionFunctions": false,
+      "deploymentBucket": "s3-sls-dev",
       "logRetentionInDays": 1,
-      "timeout": 300,
+      "timeout": 60,
+      "tracing": {
+        "lambda": true
+      },
       "environment": {
-        "STAGE": "prod",
+        "STAGE": "dev",
         "SWAPI_BASE_URL": "https://swapi.py4e.com/api",
         "WEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5/weather",
         "WEATHER_API_KEY": "<REDACTED>",
         "JWT_SECRET": "<REDACTED>",
         "CACHE_TTL": "1800"
       },
-      "versionFunctions": true,
       "deploymentBucketObject": {
-        "name": "s3-softtek-prod"
+        "name": "s3-sls-dev"
       },
       "compiledCloudFormationTemplate": {
         "AWSTemplateFormatVersion": "2010-09-09",
@@ -582,7 +626,7 @@
           "ApiLogGroup": {
             "Type": "AWS::Logs::LogGroup",
             "Properties": {
-              "LogGroupName": "/aws/lambda/aws-reto-softtek-prod-api",
+              "LogGroupName": "/aws/lambda/aws-reto-softtek-dev-api",
               "RetentionInDays": 1
             }
           },
@@ -612,7 +656,7 @@
                       "-",
                       [
                         "aws-reto-softtek",
-                        "prod",
+                        "dev",
                         "lambda"
                       ]
                     ]
@@ -629,7 +673,7 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-prod*:*"
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-dev*:*"
                           }
                         ]
                       },
@@ -640,8 +684,18 @@
                         ],
                         "Resource": [
                           {
-                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-prod*:*:*"
+                            "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-dev*:*:*"
                           }
+                        ]
+                      },
+                      {
+                        "Effect": "Allow",
+                        "Action": [
+                          "xray:PutTraceSegments",
+                          "xray:PutTelemetryRecords"
+                        ],
+                        "Resource": [
+                          "*"
                         ]
                       }
                     ]
@@ -654,7 +708,7 @@
                   "-",
                   [
                     "aws-reto-softtek",
-                    "prod",
+                    "dev",
                     {
                       "Ref": "AWS::Region"
                     },
@@ -668,28 +722,31 @@
             "Type": "AWS::Lambda::Function",
             "Properties": {
               "Code": {
-                "S3Bucket": "s3-softtek-prod",
-                "S3Key": "serverless/aws-reto-softtek/prod/1749480247192-2025-06-09T14:44:07.192Z/aws-reto-softtek.zip"
+                "S3Bucket": "s3-sls-dev",
+                "S3Key": "serverless/aws-reto-softtek/dev/1749692818780-2025-06-12T01:46:58.780Z/aws-reto-softtek.zip"
               },
               "Handler": "dist/main.handler",
               "Runtime": "nodejs20.x",
-              "FunctionName": "aws-reto-softtek-prod-api",
-              "MemorySize": 512,
-              "Timeout": 300,
+              "FunctionName": "aws-reto-softtek-dev-api",
+              "MemorySize": 2048,
+              "Timeout": 60,
               "Architectures": [
                 "arm64"
               ],
+              "TracingConfig": {
+                "Mode": "Active"
+              },
               "Environment": {
                 "Variables": {
-                  "STAGE": "prod",
+                  "STAGE": "dev",
                   "SWAPI_BASE_URL": "https://swapi.py4e.com/api",
                   "WEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5/weather",
                   "WEATHER_API_KEY": "<REDACTED>",
                   "JWT_SECRET": "<REDACTED>",
                   "CACHE_TTL": "1800",
-                  "DYNAMO_USERS_TABLE": "aws-reto-softtek-prod-users",
-                  "DYNAMO_FUSION_TABLE": "aws-reto-softtek-prod-fusion",
-                  "DYNAMO_CACHE_TABLE": "aws-reto-softtek-prod-cache"
+                  "DYNAMO_USERS_TABLE": "aws-reto-softtek-dev-users",
+                  "DYNAMO_FUSION_TABLE": "aws-reto-softtek-dev-fusion",
+                  "DYNAMO_CACHE_TABLE": "aws-reto-softtek-dev-cache"
                 }
               },
               "Role": {
@@ -703,20 +760,10 @@
               "ApiLogGroup"
             ]
           },
-          "ApiLambdaVersionkh39zqrdOZDI86cJBCeyEjyXA3Yytq8eqhrRVfU1I": {
-            "Type": "AWS::Lambda::Version",
-            "DeletionPolicy": "Retain",
-            "Properties": {
-              "FunctionName": {
-                "Ref": "ApiLambdaFunction"
-              },
-              "CodeSha256": "3U0aQLNcjco6cLvPK0wKQerbT9oQZJeoeE5TVOnA68M="
-            }
-          },
           "ApiGatewayRestApi": {
             "Type": "AWS::ApiGateway::RestApi",
             "Properties": {
-              "Name": "prod-aws-reto-softtek",
+              "Name": "dev-aws-reto-softtek",
               "EndpointConfiguration": {
                 "Types": [
                   "EDGE"
@@ -835,13 +882,13 @@
               "ApiLambdaPermissionApiGateway"
             ]
           },
-          "ApiGatewayDeployment1749480205429": {
+          "ApiGatewayDeployment1749692679282": {
             "Type": "AWS::ApiGateway::Deployment",
             "Properties": {
               "RestApiId": {
                 "Ref": "ApiGatewayRestApi"
               },
-              "StageName": "prod"
+              "StageName": "dev"
             },
             "DependsOn": [
               "ApiGatewayMethodProxyVarAny",
@@ -888,7 +935,7 @@
           "FusionTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
-              "TableName": "aws-reto-softtek-prod-fusion",
+              "TableName": "aws-reto-softtek-dev-fusion",
               "BillingMode": "PAY_PER_REQUEST",
               "AttributeDefinitions": [
                 {
@@ -907,11 +954,15 @@
           "UsersTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
-              "TableName": "aws-reto-softtek-prod-users",
+              "TableName": "aws-reto-softtek-dev-users",
               "BillingMode": "PAY_PER_REQUEST",
               "AttributeDefinitions": [
                 {
                   "AttributeName": "userId",
+                  "AttributeType": "S"
+                },
+                {
+                  "AttributeName": "email",
                   "AttributeType": "S"
                 }
               ],
@@ -920,13 +971,27 @@
                   "AttributeName": "userId",
                   "KeyType": "HASH"
                 }
+              ],
+              "GlobalSecondaryIndexes": [
+                {
+                  "IndexName": "email-index",
+                  "KeySchema": [
+                    {
+                      "AttributeName": "email",
+                      "KeyType": "HASH"
+                    }
+                  ],
+                  "Projection": {
+                    "ProjectionType": "ALL"
+                  }
+                }
               ]
             }
           },
           "CacheTable": {
             "Type": "AWS::DynamoDB::Table",
             "Properties": {
-              "TableName": "aws-reto-softtek-prod-cache",
+              "TableName": "aws-reto-softtek-dev-cache",
               "BillingMode": "PAY_PER_REQUEST",
               "AttributeDefinitions": [
                 {
@@ -945,18 +1010,9 @@
         },
         "Outputs": {
           "ServerlessDeploymentBucketName": {
-            "Value": "s3-softtek-prod",
+            "Value": "s3-sls-dev",
             "Export": {
-              "Name": "sls-aws-reto-softtek-prod-ServerlessDeploymentBucketName"
-            }
-          },
-          "ApiLambdaFunctionQualifiedArn": {
-            "Description": "Current Lambda function version",
-            "Value": {
-              "Ref": "ApiLambdaVersionkh39zqrdOZDI86cJBCeyEjyXA3Yytq8eqhrRVfU1I"
-            },
-            "Export": {
-              "Name": "sls-aws-reto-softtek-prod-ApiLambdaFunctionQualifiedArn"
+              "Name": "sls-aws-reto-softtek-dev-ServerlessDeploymentBucketName"
             }
           },
           "ServiceEndpoint": {
@@ -977,12 +1033,12 @@
                   {
                     "Ref": "AWS::URLSuffix"
                   },
-                  "/prod"
+                  "/dev"
                 ]
               ]
             },
             "Export": {
-              "Name": "sls-aws-reto-softtek-prod-ServiceEndpoint"
+              "Name": "sls-aws-reto-softtek-dev-ServiceEndpoint"
             }
           }
         }
@@ -998,40 +1054,32 @@
       "serviceProvider": null,
       "instanceParameters": null
     },
-    "serviceRawFile": "# \"org\" ensures this Service is used with the correct Serverless Framework Access Key.\r\norg: slavallec\r\nservice: aws-reto-softtek\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs20.x\r\n  architecture: arm64\r\n  stage: prod\r\n  region: us-east-1\r\n  memorySize: 512\r\n  deploymentBucket:\r\n    name: s3-softtek-${self:provider.stage}\r\n  logRetentionInDays: 1\r\n  timeout: 300\r\n  environment:\r\n    STAGE: ${self:provider.stage}\r\n    SWAPI_BASE_URL: https://swapi.py4e.com/api\r\n    WEATHER_BASE_URL: https://api.openweathermap.org/data/2.5/weather\r\n    WEATHER_API_KEY: 68a740e385965b46699c00876750e4c4\r\n    JWT_SECRET: api-softtek-rimac\r\n    CACHE_TTL: 1800\r\n\r\npackage: \r\n  exclude:\r\n    - src/**\r\n    - node_modules/**\r\n    - '!node_modules/@vendia/**'\r\n    - '@nestjs/core'\r\n\r\nfunctions:\r\n  api:\r\n    handler: dist/main.handler\r\n    events:\r\n      - http:\r\n          path: /{proxy+}\r\n          method: ANY\r\n      - http:\r\n          path: /\r\n          method: ANY\r\n    environment:\r\n      DYNAMO_USERS_TABLE: ${self:service}-${self:provider.stage}-users\r\n      DYNAMO_FUSION_TABLE: ${self:service}-${self:provider.stage}-fusion\r\n      DYNAMO_CACHE_TABLE: ${self:service}-${self:provider.stage}-cache\r\n\r\nplugins:\r\n  - serverless-offline\r\n\r\nresources:\r\n  Resources:\r\n    FusionTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-fusion\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: fusionId\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: fusionId\r\n            KeyType: HASH\r\n      \r\n    UsersTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-users\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: userId\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: userId\r\n            KeyType: HASH\r\n\r\n    CacheTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-cache\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: cacheId\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: cacheId\r\n            KeyType: HASH\r\n",
+    "serviceRawFile": "service: aws-reto-softtek\r\nframeworkVersion: '4'\r\n\r\nprovider:\r\n  name: aws\r\n  runtime: nodejs20.x\r\n  architecture: arm64\r\n  stage: dev\r\n  region: us-east-1\r\n  memorySize: 2048\r\n  versionFunctions: false\r\n  deploymentBucket:\r\n    name: s3-sls-${self:provider.stage}\r\n  logRetentionInDays: 1\r\n  timeout: 60\r\n  tracing:\r\n    lambda: true\r\n  environment:\r\n    STAGE: ${self:provider.stage}\r\n    SWAPI_BASE_URL: ${self:custom.SWAPI_URL}\r\n    WEATHER_BASE_URL: ${self:custom.WEATHER_URL}\r\n    WEATHER_API_KEY: ${self:custom.WEATHER_KEY}\r\n    JWT_SECRET: ${self:custom.secreto_jwt}\r\n    CACHE_TTL: 1800\r\n\r\npackage: \r\n  exclude:\r\n    - '!node_modules/@vendia/**'\r\n    - .serverless/**\r\n    - .git/**\r\n  include:\r\n    - dist/**\r\n    - node_modules/**\r\n\r\nfunctions:\r\n  api:\r\n    handler: dist/main.handler\r\n    events:\r\n      - http:\r\n          path: /{proxy+}\r\n          method: ANY\r\n      - http:\r\n          path: /\r\n          method: ANY\r\n    environment:\r\n      DYNAMO_USERS_TABLE: ${self:service}-${self:provider.stage}-users\r\n      DYNAMO_FUSION_TABLE: ${self:service}-${self:provider.stage}-fusion\r\n      DYNAMO_CACHE_TABLE: ${self:service}-${self:provider.stage}-cache\r\n \r\nplugins:\r\n  - serverless-offline\r\n\r\ncustom:\r\n  SWAPI_URL: https://swapi.py4e.com/api\r\n  WEATHER_URL: https://api.openweathermap.org/data/2.5/weather\r\n  WEATHER_KEY: 68a740e385965b46699c00876750e4c4\r\n  secreto_jwt: api-softtek-rimac\r\n\r\nresources:\r\n  Resources:\r\n    FusionTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-fusion\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: fusionId\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: fusionId\r\n            KeyType: HASH\r\n      \r\n    UsersTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-users\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: userId\r\n            AttributeType: S\r\n          - AttributeName: email\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: userId\r\n            KeyType: HASH\r\n        GlobalSecondaryIndexes:\r\n          - IndexName: email-index\r\n            KeySchema:\r\n              - AttributeName: email\r\n                KeyType: HASH\r\n            Projection:\r\n              ProjectionType: ALL\r\n\r\n    CacheTable:\r\n      Type: AWS::DynamoDB::Table\r\n      Properties:\r\n        TableName: ${self:service}-${self:provider.stage}-cache\r\n        BillingMode: PAY_PER_REQUEST\r\n        AttributeDefinitions:\r\n          - AttributeName: cacheId\r\n            AttributeType: S\r\n        KeySchema:\r\n          - AttributeName: cacheId\r\n            KeyType: HASH\r\n",
     "command": [
       "deploy"
     ],
-    "options": {
-      "verbose": true
-    },
+    "options": {},
     "orgId": "656db555-b548-40a5-ae5d-10166f52ae8f",
     "orgName": "slavallec",
     "userId": "pSsPDcJc80FcqdpyZq",
     "userName": "slavallec",
     "serviceProviderAwsAccountId": "027686359759",
-    "serviceProviderAwsCfStackName": "aws-reto-softtek-prod",
-    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:027686359759:stack/aws-reto-softtek-prod/3687d360-4540-11f0-8e2a-127aa5b3d8c3",
-    "serviceProviderAwsCfStackCreated": "2025-06-09T14:44:14.475Z",
-    "serviceProviderAwsCfStackUpdated": null,
-    "serviceProviderAwsCfStackStatus": "CREATE_COMPLETE",
+    "serviceProviderAwsCfStackName": "aws-reto-softtek-dev",
+    "serviceProviderAwsCfStackId": "arn:aws:cloudformation:us-east-1:027686359759:stack/aws-reto-softtek-dev/2118a7a0-4713-11f0-ac81-0efff1173fbf",
+    "serviceProviderAwsCfStackCreated": "2025-06-11T22:26:33.518Z",
+    "serviceProviderAwsCfStackUpdated": "2025-06-11T22:58:56.082Z",
+    "serviceProviderAwsCfStackStatus": "UPDATE_COMPLETE",
     "serviceProviderAwsCfStackOutputs": [
       {
-        "OutputKey": "ApiLambdaFunctionQualifiedArn",
-        "OutputValue": "arn:aws:lambda:us-east-1:027686359759:function:aws-reto-softtek-prod-api:1",
-        "Description": "Current Lambda function version",
-        "ExportName": "sls-aws-reto-softtek-prod-ApiLambdaFunctionQualifiedArn"
-      },
-      {
         "OutputKey": "ServiceEndpoint",
-        "OutputValue": "https://qs4rcr7s7j.execute-api.us-east-1.amazonaws.com/prod",
+        "OutputValue": "https://ycd7ex7kik.execute-api.us-east-1.amazonaws.com/dev",
         "Description": "URL of the service endpoint",
-        "ExportName": "sls-aws-reto-softtek-prod-ServiceEndpoint"
+        "ExportName": "sls-aws-reto-softtek-dev-ServiceEndpoint"
       },
       {
         "OutputKey": "ServerlessDeploymentBucketName",
-        "OutputValue": "s3-softtek-prod",
-        "ExportName": "sls-aws-reto-softtek-prod-ServerlessDeploymentBucketName"
+        "OutputValue": "s3-sls-dev",
+        "ExportName": "sls-aws-reto-softtek-dev-ServerlessDeploymentBucketName"
       }
     ],
     "compiledCloudFormationTemplate": {
@@ -1041,7 +1089,7 @@
         "ApiLogGroup": {
           "Type": "AWS::Logs::LogGroup",
           "Properties": {
-            "LogGroupName": "/aws/lambda/aws-reto-softtek-prod-api",
+            "LogGroupName": "/aws/lambda/aws-reto-softtek-dev-api",
             "RetentionInDays": 1
           }
         },
@@ -1071,7 +1119,7 @@
                     "-",
                     [
                       "aws-reto-softtek",
-                      "prod",
+                      "dev",
                       "lambda"
                     ]
                   ]
@@ -1088,7 +1136,7 @@
                       ],
                       "Resource": [
                         {
-                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-prod*:*"
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-dev*:*"
                         }
                       ]
                     },
@@ -1099,8 +1147,18 @@
                       ],
                       "Resource": [
                         {
-                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-prod*:*:*"
+                          "Fn::Sub": "arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/aws-reto-softtek-dev*:*:*"
                         }
+                      ]
+                    },
+                    {
+                      "Effect": "Allow",
+                      "Action": [
+                        "xray:PutTraceSegments",
+                        "xray:PutTelemetryRecords"
+                      ],
+                      "Resource": [
+                        "*"
                       ]
                     }
                   ]
@@ -1113,7 +1171,7 @@
                 "-",
                 [
                   "aws-reto-softtek",
-                  "prod",
+                  "dev",
                   {
                     "Ref": "AWS::Region"
                   },
@@ -1127,28 +1185,31 @@
           "Type": "AWS::Lambda::Function",
           "Properties": {
             "Code": {
-              "S3Bucket": "s3-softtek-prod",
-              "S3Key": "serverless/aws-reto-softtek/prod/1749480247192-2025-06-09T14:44:07.192Z/aws-reto-softtek.zip"
+              "S3Bucket": "s3-sls-dev",
+              "S3Key": "serverless/aws-reto-softtek/dev/1749692818780-2025-06-12T01:46:58.780Z/aws-reto-softtek.zip"
             },
             "Handler": "dist/main.handler",
             "Runtime": "nodejs20.x",
-            "FunctionName": "aws-reto-softtek-prod-api",
-            "MemorySize": 512,
-            "Timeout": 300,
+            "FunctionName": "aws-reto-softtek-dev-api",
+            "MemorySize": 2048,
+            "Timeout": 60,
             "Architectures": [
               "arm64"
             ],
+            "TracingConfig": {
+              "Mode": "Active"
+            },
             "Environment": {
               "Variables": {
-                "STAGE": "prod",
+                "STAGE": "dev",
                 "SWAPI_BASE_URL": "https://swapi.py4e.com/api",
                 "WEATHER_BASE_URL": "https://api.openweathermap.org/data/2.5/weather",
                 "WEATHER_API_KEY": "<REDACTED>",
                 "JWT_SECRET": "<REDACTED>",
                 "CACHE_TTL": "1800",
-                "DYNAMO_USERS_TABLE": "aws-reto-softtek-prod-users",
-                "DYNAMO_FUSION_TABLE": "aws-reto-softtek-prod-fusion",
-                "DYNAMO_CACHE_TABLE": "aws-reto-softtek-prod-cache"
+                "DYNAMO_USERS_TABLE": "aws-reto-softtek-dev-users",
+                "DYNAMO_FUSION_TABLE": "aws-reto-softtek-dev-fusion",
+                "DYNAMO_CACHE_TABLE": "aws-reto-softtek-dev-cache"
               }
             },
             "Role": {
@@ -1162,20 +1223,10 @@
             "ApiLogGroup"
           ]
         },
-        "ApiLambdaVersionkh39zqrdOZDI86cJBCeyEjyXA3Yytq8eqhrRVfU1I": {
-          "Type": "AWS::Lambda::Version",
-          "DeletionPolicy": "Retain",
-          "Properties": {
-            "FunctionName": {
-              "Ref": "ApiLambdaFunction"
-            },
-            "CodeSha256": "3U0aQLNcjco6cLvPK0wKQerbT9oQZJeoeE5TVOnA68M="
-          }
-        },
         "ApiGatewayRestApi": {
           "Type": "AWS::ApiGateway::RestApi",
           "Properties": {
-            "Name": "prod-aws-reto-softtek",
+            "Name": "dev-aws-reto-softtek",
             "EndpointConfiguration": {
               "Types": [
                 "EDGE"
@@ -1294,13 +1345,13 @@
             "ApiLambdaPermissionApiGateway"
           ]
         },
-        "ApiGatewayDeployment1749480205429": {
+        "ApiGatewayDeployment1749692679282": {
           "Type": "AWS::ApiGateway::Deployment",
           "Properties": {
             "RestApiId": {
               "Ref": "ApiGatewayRestApi"
             },
-            "StageName": "prod"
+            "StageName": "dev"
           },
           "DependsOn": [
             "ApiGatewayMethodProxyVarAny",
@@ -1347,7 +1398,7 @@
         "FusionTable": {
           "Type": "AWS::DynamoDB::Table",
           "Properties": {
-            "TableName": "aws-reto-softtek-prod-fusion",
+            "TableName": "aws-reto-softtek-dev-fusion",
             "BillingMode": "PAY_PER_REQUEST",
             "AttributeDefinitions": [
               {
@@ -1366,11 +1417,15 @@
         "UsersTable": {
           "Type": "AWS::DynamoDB::Table",
           "Properties": {
-            "TableName": "aws-reto-softtek-prod-users",
+            "TableName": "aws-reto-softtek-dev-users",
             "BillingMode": "PAY_PER_REQUEST",
             "AttributeDefinitions": [
               {
                 "AttributeName": "userId",
+                "AttributeType": "S"
+              },
+              {
+                "AttributeName": "email",
                 "AttributeType": "S"
               }
             ],
@@ -1379,13 +1434,27 @@
                 "AttributeName": "userId",
                 "KeyType": "HASH"
               }
+            ],
+            "GlobalSecondaryIndexes": [
+              {
+                "IndexName": "email-index",
+                "KeySchema": [
+                  {
+                    "AttributeName": "email",
+                    "KeyType": "HASH"
+                  }
+                ],
+                "Projection": {
+                  "ProjectionType": "ALL"
+                }
+              }
             ]
           }
         },
         "CacheTable": {
           "Type": "AWS::DynamoDB::Table",
           "Properties": {
-            "TableName": "aws-reto-softtek-prod-cache",
+            "TableName": "aws-reto-softtek-dev-cache",
             "BillingMode": "PAY_PER_REQUEST",
             "AttributeDefinitions": [
               {
@@ -1404,18 +1473,9 @@
       },
       "Outputs": {
         "ServerlessDeploymentBucketName": {
-          "Value": "s3-softtek-prod",
+          "Value": "s3-sls-dev",
           "Export": {
-            "Name": "sls-aws-reto-softtek-prod-ServerlessDeploymentBucketName"
-          }
-        },
-        "ApiLambdaFunctionQualifiedArn": {
-          "Description": "Current Lambda function version",
-          "Value": {
-            "Ref": "ApiLambdaVersionkh39zqrdOZDI86cJBCeyEjyXA3Yytq8eqhrRVfU1I"
-          },
-          "Export": {
-            "Name": "sls-aws-reto-softtek-prod-ApiLambdaFunctionQualifiedArn"
+            "Name": "sls-aws-reto-softtek-dev-ServerlessDeploymentBucketName"
           }
         },
         "ServiceEndpoint": {
@@ -1436,12 +1496,12 @@
                 {
                   "Ref": "AWS::URLSuffix"
                 },
-                "/prod"
+                "/dev"
               ]
             ]
           },
           "Export": {
-            "Name": "sls-aws-reto-softtek-prod-ServiceEndpoint"
+            "Name": "sls-aws-reto-softtek-dev-ServiceEndpoint"
           }
         }
       }

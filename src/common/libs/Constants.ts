@@ -1,4 +1,25 @@
 export const NUMERO = {
   UNO: 1,
+  DIEZ: 10,
   OCHENTAYTRES: 83,
 };
+
+export const PUBLIC_KEY = 'PUBLIC';
+export const ADMIN_KEY = 'ADMIN';
+
+export enum ErrorType {
+  APPLICATION = 'APPLICATION',
+  DATABASE = 'DATABASE',
+  BUSINESS_RULE = 'BUSINESS_RULE',
+  VALIDATION = 'VALIDATION',
+  AUTHENTICATION = 'AUTHENTICATION',
+  AUTHORIZATION = 'AUTHORIZATION',
+  EXTERNAL_SERVICE = 'EXTERNAL_SERVICE',
+}
+
+export enum ErrorSeverity {
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
+}

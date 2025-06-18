@@ -1,32 +1,36 @@
-# "org" ensures this Service is used with the correct Serverless Framework Access Key.
-org: slavallec
 service: aws-reto-softtek
+frameworkVersion: '4'
 
 provider:
   name: aws
   runtime: nodejs20.x
   architecture: arm64
-  stage: prod
+  stage: dev
   region: us-east-1
-  memorySize: 512
+  memorySize: 2048
+  versionFunctions: false
   deploymentBucket:
-    name: s3-softtek-${self:provider.stage}
+    name: s3-sls-${self:provider.stage}
   logRetentionInDays: 1
-  timeout: 300
+  timeout: 60
+  tracing:
+    lambda: true
   environment:
     STAGE: ${self:provider.stage}
-    SWAPI_BASE_URL: https://swapi.py4e.com/api
-    WEATHER_BASE_URL: https://api.openweathermap.org/data/2.5/weather
-    WEATHER_API_KEY: 68a740e385965b46699c00876750e4c4
-    JWT_SECRET: api-softtek-rimac
+    SWAPI_BASE_URL: ${self:custom.SWAPI_URL}
+    WEATHER_BASE_URL: ${self:custom.WEATHER_URL}
+    WEATHER_API_KEY: ${self:custom.WEATHER_KEY}
+    JWT_SECRET: ${self:custom.secreto_jwt}
     CACHE_TTL: 1800
 
 package: 
   exclude:
-    - src/**
-    - node_modules/**
     - '!node_modules/@vendia/**'
-    - '@nestjs/core'
+    - .serverless/**
+    - .git/**
+  include:
+    - dist/**
+    - node_modules/**
 
 functions:
   api:
@@ -42,9 +46,15 @@ functions:
       DYNAMO_USERS_TABLE: ${self:service}-${self:provider.stage}-users
       DYNAMO_FUSION_TABLE: ${self:service}-${self:provider.stage}-fusion
       DYNAMO_CACHE_TABLE: ${self:service}-${self:provider.stage}-cache
-
+ 
 plugins:
   - serverless-offline
+
+custom:
+  SWAPI_URL: https://swapi.py4e.com/api
+  WEATHER_URL: https://api.openweathermap.org/data/2.5/weather
+  WEATHER_KEY: 68a740e385965b46699c00876750e4c4
+  secreto_jwt: api-softtek-rimac
 
 resources:
   Resources:
@@ -68,9 +78,18 @@ resources:
         AttributeDefinitions:
           - AttributeName: userId
             AttributeType: S
+          - AttributeName: email
+            AttributeType: S
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: email-index
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
 
     CacheTable:
       Type: AWS::DynamoDB::Table

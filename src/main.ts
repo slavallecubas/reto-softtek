@@ -1,8 +1,9 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { PORT } from './config/configuration';
-import { ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { configure as serverlessExpress } from '@vendia/serverless-express';
+import { Swagger } from './common/swagger/swagger';
 
 let cachedServer;
 
@@ -23,6 +24,9 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
 
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(reflector));
+
   app.setGlobalPrefix('api');
   app.useGlobalPipes(
     new ValidationPipe({
@@ -35,8 +39,8 @@ async function bootstrap() {
     origin: true,
   });
 
+  new Swagger(app);
   await app.listen(PUERTO);
-
   console.log(`🚀 API is running on: http://localhost:${PUERTO}`);
 }
 bootstrap();
