@@ -493,10 +493,10 @@ Este proyecto está licenciado bajo la Licencia MIT - ver el archivo [LICENSE](L
 
 ## 📞 Contacto y Soporte
 
-- **Email**: tu-email@ejemplo.com
-- **LinkedIn**: [Tu Perfil de LinkedIn](https://linkedin.com/in/tu-perfil)
+- **Email**: lavalle.cubas@gmail.com
+- **LinkedIn**: [Tu Perfil de LinkedIn](https://www.linkedin.com/in/sergio-lavalle/)
 - **GitHub Issues**: Para reportar bugs o solicitar features
-- **Documentation**: Documentación completa en [docs.tu-dominio.com](https://docs.tu-dominio.com)
+- **Documentation**: Documentación completa en [docs.tu-dominio.com](https://github.com/slavallecubas)
 
 ---
 
